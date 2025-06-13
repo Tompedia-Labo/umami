@@ -153,6 +153,9 @@ export async function getClientInfo(request: Request, payload: Record<string, an
   const os = detectOS(userAgent) as string;
   const device = getDevice(payload?.screen, os);
 
+  // eslint-disable-next-line no-console
+  console.log('Client info: ', userAgent, browser, os, ip, country, region, city, device);
+
   return { userAgent, browser, os, ip, country, region, city, device };
 }
 
