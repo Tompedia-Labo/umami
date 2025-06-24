@@ -142,6 +142,7 @@ export async function getLocation(ip: string = '', headers: Headers, hasPayloadI
   }
 }
 
+//if from Tompedia mobile app, Browser is Tompedia
 export async function getClientInfo(request: Request, payload: Record<string, any>) {
   const userAgent = payload?.userAgent || request.headers.get('user-agent');
   const ip = payload?.ip || getIpAddress(request.headers);
