@@ -371,9 +371,7 @@ function getClient(params?: {
     prisma.$on('query' as never, queryLogger || log);
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    global[PRISMA] = prisma;
-  }
+  global[PRISMA] = prisma;
 
   log('Prisma initialized');
 
