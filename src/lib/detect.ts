@@ -150,7 +150,7 @@ export async function getClientInfo(request: Request, payload: Record<string, an
   const country = location?.country;
   const region = location?.region;
   const city = location?.city;
-  const browser = userAgent.includes('Tompedia') ? 'Tompedia' : browserName(userAgent);
+  const browser = userAgent.includes('jp.tompedia') ? 'Tompedia' : browserName(userAgent);
   const os = detectOS(userAgent) as string;
   const device = getDevice(payload?.screen, os);
 
