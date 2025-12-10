@@ -108,6 +108,7 @@ export async function getLocation(ip: string = '', headers: Headers, hasPayloadI
 }
 
 //if from Tompedia mobile app, Browser is Tompedia
+//TODO: add browser to payload on umami_flutter's end
 export async function getClientInfo(request: Request, payload: Record<string, any>) {
   const userAgent = payload?.userAgent || request.headers.get('user-agent');
   const ip = payload?.ip || getIpAddress(request.headers);
