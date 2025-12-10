@@ -22,7 +22,7 @@ if (!url.searchParams.has('sslmode')) {
 
 const adapter = new PrismaPg(
   { connectionString: url.toString() },
-  { schema: url.searchParams.get('schema') },
+  { schema: url.searchParams.get('schema'), ssl: { rejectUnauthorized: false } },
 );
 
 const prisma = new PrismaClient({ adapter });
