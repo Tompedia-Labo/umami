@@ -18,25 +18,40 @@
   const _false = 'false';
   const _true = 'true';
   const attr = currentScript.getAttribute.bind(currentScript);
-  const website = attr(_data + 'website-id');
-  const hostUrl = attr(_data + 'host-url');
-  const beforeSend = attr(_data + 'before-send');
-  const tag = attr(_data + 'tag') || undefined;
-  const autoTrack = attr(_data + 'auto-track') !== _false;
-  const dnt = attr(_data + 'do-not-track') === _true;
-  const excludeSearch = attr(_data + 'exclude-search') === _true;
-  const excludeHash = attr(_data + 'exclude-hash') === _true;
-  const domain = attr(_data + 'domains') || '';
+
+  const website = attr(`${_data}website-id`);
+  const hostUrl = attr(`${_data}host-url`);
+  const beforeSend = attr(`${_data}before-send`);
+  const tag = attr(`${_data}tag`) || undefined;
+  const autoTrack = attr(`${_data}auto-track`) !== _false;
+  const dnt = attr(`${_data}do-not-track`) === _true;
+  const excludeSearch = attr(`${_data}exclude-search`) === _true;
+  const excludeHash = attr(`${_data}exclude-hash`) === _true;
+  const domain = attr(`${_data}domains`) || '';
+  const credentials = attr(`${_data}fetch-credentials`) || 'omit';
+
   const domains = domain.split(',').map(n => n.trim());
   const host =
     hostUrl || '__COLLECT_API_HOST__' || currentScript.src.split('/').slice(0, -1).join('/');
   const endpoint = `${host.replace(/\/$/, '')}__COLLECT_API_ENDPOINT__`;
   const screen = `${width}x${height}`;
   const eventRegex = /data-umami-event-([\w-_]+)/;
-  const eventNameAttribute = _data + 'umami-event';
+  const eventNameAttribute = `${_data}umami-event`;
   const delayDuration = 300;
 
   /* Helper functions */
+
+  const normalize = raw => {
+    if (!raw) return raw;
+    try {
+      const u = new URL(raw, location.href);
+      if (excludeSearch) u.search = '';
+      if (excludeHash) u.hash = '';
+      return u.toString();
+    } catch {
+      return raw;
+    }
+  };
 
   const getPayload = () => ({
     website,
@@ -61,11 +76,7 @@
     if (!url) return;
 
     currentRef = currentUrl;
-    currentUrl = new URL(url, location.href);
-
-    if (excludeSearch) currentUrl.search = '';
-    if (excludeHash) currentUrl.hash = '';
-    currentUrl = currentUrl.toString();
+    currentUrl = normalize(new URL(url, location.href).toString());
 
     if (currentUrl !== currentRef) {
       setTimeout(track, delayDuration);
@@ -133,7 +144,7 @@
   const trackingDisabled = () =>
     disabled ||
     !website ||
-    (localStorage && localStorage.getItem('umami.disabled')) ||
+    localStorage?.getItem('umami.disabled') ||
     (domain && !domains.includes(hostname)) ||
     (dnt && hasDoNotTrack());
 
@@ -143,20 +154,21 @@
     const callback = window[beforeSend];
 
     if (typeof callback === 'function') {
-      payload = callback(type, payload);
+      payload = await Promise.resolve(callback(type, payload));
     }
 
     if (!payload) return;
 
     try {
       const res = await fetch(endpoint, {
+        keepalive: true,
         method: 'POST',
         body: JSON.stringify({ type, payload }),
         headers: {
           'Content-Type': 'application/json',
           ...(typeof cache !== 'undefined' && { 'x-umami-cache': cache }),
         },
-        credentials: 'omit',
+        credentials,
       });
 
       const data = await res.json();
@@ -164,7 +176,8 @@
         disabled = !!data.disabled;
         cache = data.cache;
       }
-    } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_e) {
       /* no-op */
     }
   };
@@ -209,8 +222,9 @@
     };
   }
 
-  let currentUrl = href;
-  let currentRef = referrer.startsWith(origin) ? '' : referrer;
+  let currentUrl = normalize(href);
+  let currentRef = normalize(referrer.startsWith(origin) ? '' : referrer);
+
   let initialized = false;
   let disabled = false;
   let cache;

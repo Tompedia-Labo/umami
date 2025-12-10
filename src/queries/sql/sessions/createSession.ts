@@ -1,25 +1,16 @@
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@/generated/prisma/client';
 import prisma from '@/lib/prisma';
 
-export async function createSession(data: Prisma.SessionCreateInput) {
-  const {
-    id,
-    websiteId,
-    browser,
-    os,
-    device,
-    screen,
-    language,
-    country,
-    region,
-    city,
-    distinctId,
-  } = data;
+const FUNCTION_NAME = 'createSession';
 
-  return prisma.client.session.create({
-    data: {
-      id,
-      websiteId,
+export async function createSession(data: Prisma.SessionCreateInput) {
+  const { rawQuery } = prisma;
+
+  await rawQuery(
+    `
+    insert into session (
+      session_id,
+      website_id,
       browser,
       os,
       device,
@@ -28,7 +19,26 @@ export async function createSession(data: Prisma.SessionCreateInput) {
       country,
       region,
       city,
-      distinctId,
-    },
-  });
+      distinct_id,
+      created_at
+    )
+    values (
+      {{id}},
+      {{websiteId}},
+      {{browser}},
+      {{os}},
+      {{device}},
+      {{screen}},
+      {{language}},
+      {{country}},
+      {{region}},
+      {{city}},
+      {{distinctId}},
+      {{createdAt}}
+    )
+    on conflict (session_id) do nothing
+    `,
+    data,
+    FUNCTION_NAME,
+  );
 }
