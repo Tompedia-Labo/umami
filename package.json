@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "next dev -p 3001 --turbo",
     "build": "npm-run-all check-env build-db check-db build-tracker build-geo build-app",
+    "build-staging": "dotenvx run -f .env.staging -- npm run build",
     "start": "next start",
     "build-docker": "npm-run-all build-db build-tracker build-geo build-app",
     "start-docker": "npm-run-all check-db update-tracker start-server",
