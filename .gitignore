@@ -37,9 +37,10 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env
-.env.*
-*.env.*
+.env.keys
+.env.local
+.env.*.local
+.env.local.*
 
 *.dev.yml
 

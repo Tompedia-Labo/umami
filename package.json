@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "next dev -p 3001 --turbo",
     "build": "npm-run-all check-env build-db check-db build-tracker build-geo build-app",
+    "build-staging": "dotenvx run -f .env.staging -- npm run build",
     "start": "next start",
     "build-docker": "npm-run-all build-db build-tracker build-geo build-app",
     "start-docker": "npm-run-all check-db update-tracker start-server",
@@ -108,6 +109,7 @@
     "papaparse": "^5.5.3",
     "pg": "^8.16.3",
     "prisma": "^6.18.0",
+    "prop-types": "^15.8.1",
     "pure-rand": "^7.0.1",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
@@ -127,6 +129,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
+    "@dotenvx/dotenvx": "^1.51.1",
     "@formatjs/cli": "^4.2.29",
     "@netlify/plugin-nextjs": "^5.15.1",
     "@rollup/plugin-alias": "^5.0.0",
