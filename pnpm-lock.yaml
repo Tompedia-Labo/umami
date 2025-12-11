@@ -149,6 +149,9 @@ importers:
       prisma:
         specifier: ^6.18.0
         version: 6.19.1(typescript@5.9.3)
+      prop-types:
+        specifier: ^15.8.1
+        version: 15.8.1
       pure-rand:
         specifier: ^7.0.1
         version: 7.0.1
