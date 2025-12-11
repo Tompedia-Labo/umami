@@ -125,6 +125,7 @@
     "zustand": "^4.5.5"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.51.1",
     "@formatjs/cli": "^4.2.29",
     "@netlify/plugin-nextjs": "^5.10.6",
     "@rollup/plugin-alias": "^5.0.0",
