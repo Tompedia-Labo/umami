@@ -174,6 +174,9 @@ export default {
   },
   basePath,
   output: 'standalone',
+  outputFileTracingIncludes: {
+    '/**/*': ['./prisma/prod-ca-2021.crt'],
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
