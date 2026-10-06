@@ -10,6 +10,16 @@ import { safeDecodeURIComponent } from '@/lib/url';
 const MAXMIND = 'maxmind';
 
 const PROVIDER_HEADERS = [
+  // Umami custom headers (cloud mode only)
+  ...(process.env.CLOUD_MODE
+    ? [
+        {
+          countryHeader: 'x-umami-client-country',
+          regionHeader: 'x-umami-client-region',
+          cityHeader: 'x-umami-client-city',
+        },
+      ]
+    : []),
   // Cloudflare headers
   {
     countryHeader: 'cf-ipcountry',
@@ -27,6 +37,12 @@ const PROVIDER_HEADERS = [
     countryHeader: 'cloudfront-viewer-country',
     regionHeader: 'cloudfront-viewer-country-region',
     cityHeader: 'cloudfront-viewer-city',
+  },
+  // EdgeOne headers (requires custom request headers in Rule Priorities, see: https://edgeone.ai/document/46151)
+  {
+    countryHeader: 'eo-ipcountry',
+    regionHeader: 'eo-region-code',
+    cityHeader: 'eo-ipcity',
   },
 ];
 
@@ -60,13 +76,23 @@ function decodeHeader(s: string | undefined | null): string | undefined | null {
   return Buffer.from(s, 'latin1').toString('utf-8');
 }
 
-export async function getLocation(ip: string = '', headers: Headers, hasPayloadIP: boolean) {
-  // Ignore local ips
-  if (!ip || (await isLocalhost(ip))) {
+async function isLocalIp(ip: string) {
+  try {
+    return await isLocalhost(ip);
+  } catch {
+    return false;
+  }
+}
+
+export async function getLocation(ip: string = '', headers: Headers, skipHeaders: boolean) {
+  const cleanIp = stripPort(ip);
+
+  // Ignore local or invalid ips
+  if (!cleanIp || !ipaddr.isValid(cleanIp) || (await isLocalIp(cleanIp))) {
     return null;
   }
 
-  if (!hasPayloadIP && !process.env.SKIP_LOCATION_HEADERS) {
+  if (!skipHeaders && !process.env.SKIP_LOCATION_HEADERS) {
     for (const provider of PROVIDER_HEADERS) {
       const countryHeader = headers.get(provider.countryHeader);
       if (countryHeader) {
@@ -92,7 +118,7 @@ export async function getLocation(ip: string = '', headers: Headers, hasPayloadI
     );
   }
 
-  const result = globalThis[MAXMIND]?.get(stripPort(ip));
+  const result = globalThis[MAXMIND]?.get(cleanIp);
 
   if (result) {
     const country = result.country?.iso_code ?? result?.registered_country?.iso_code;
@@ -107,8 +133,6 @@ export async function getLocation(ip: string = '', headers: Headers, hasPayloadI
   }
 }
 
-//if from Tompedia mobile app, Browser is Tompedia
-//TODO: add browser to payload on umami_flutter's end
 export async function getClientInfo(request: Request, payload: Record<string, any>) {
   const userAgent = payload?.userAgent || request.headers.get('user-agent');
   const ip = payload?.ip || getIpAddress(request.headers);
@@ -116,8 +140,7 @@ export async function getClientInfo(request: Request, payload: Record<string, an
   const country = safeDecodeURIComponent(location?.country);
   const region = safeDecodeURIComponent(location?.region);
   const city = safeDecodeURIComponent(location?.city);
-  const browser =
-    payload?.browser ?? (userAgent?.includes('Tompedia') ? 'Tompedia' : browserName(userAgent));
+  const browser = payload?.browser ?? browserName(userAgent);
   const os = payload?.os ?? (detectOS(userAgent) as string);
   const device = payload?.device ?? getDevice(userAgent, payload?.screen);
 
@@ -127,31 +150,31 @@ export async function getClientInfo(request: Request, payload: Record<string, an
 export function hasBlockedIp(clientIp: string) {
   const ignoreIps = process.env.IGNORE_IP;
 
-  if (ignoreIps) {
-    const ips = [];
+  if (!clientIp || !ignoreIps) {
+    return false;
+  }
 
-    if (ignoreIps) {
-      ips.push(...ignoreIps.split(',').map(n => n.trim()));
+  const ips = ignoreIps.split(',').map(n => n.trim());
+
+  return ips.some(ip => {
+    if (ip === clientIp) {
+      return true;
     }
 
-    return ips.find(ip => {
-      if (ip === clientIp) {
-        return true;
-      }
-
-      // CIDR notation
-      if (ip.indexOf('/') > 0) {
+    // CIDR notation
+    if (ip.indexOf('/') > 0) {
+      try {
         const addr = ipaddr.parse(clientIp);
         const range = ipaddr.parseCIDR(ip);
 
         if (addr.kind() === range[0].kind() && addr.match(range)) {
           return true;
         }
+      } catch {
+        // Ignore parsing errors
       }
+    }
 
-      return false;
-    });
-  }
-
-  return false;
+    return false;
+  });
 }
