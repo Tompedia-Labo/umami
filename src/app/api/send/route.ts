@@ -2,10 +2,9 @@ import { startOfHour } from 'date-fns';
 import { isbot } from 'isbot';
 import { z } from 'zod';
 import clickhouse from '@/lib/clickhouse';
-import { CACHE_TOKEN_TYPE, COLLECTION_TYPE, EVENT_TYPE, FIELD_LENGTH } from '@/lib/constants';
+import { CACHE_TOKEN_TYPE, COLLECTION_TYPE, EVENT_TYPE } from '@/lib/constants';
 import { getSalt, hash, secret, uuid } from '@/lib/crypto';
 import { getClientInfo, hasBlockedIp } from '@/lib/detect';
-import { truncateString } from '@/lib/format';
 import { createToken, parseToken } from '@/lib/jwt';
 import { fetchWebsite } from '@/lib/load';
 import { parseRequest } from '@/lib/request';
@@ -151,7 +150,7 @@ export async function POST(request: Request) {
 
     const createdAt = timestamp ? new Date(timestamp * 1000) : new Date();
     const now = Math.floor(Date.now() / 1000);
-    const distinctId = truncateString(id, FIELD_LENGTH.distinctId);
+    const distinctId = id ? uuid(id) : null;
 
     const saltRotation = process.env.SALT_ROTATION || 'month';
     const sessionSalt = getSalt(saltRotation, createdAt);

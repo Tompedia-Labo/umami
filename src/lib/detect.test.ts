@@ -1,5 +1,5 @@
 import { beforeEach, expect, test, vi } from 'vitest';
-import { getLocation, hasBlockedIp } from './detect';
+import { getClientInfo, getLocation, hasBlockedIp } from './detect';
 import { getIpAddress } from './ip';
 
 const IP = '127.0.0.1';
@@ -74,6 +74,17 @@ test('getLocation: treats localhost check errors as non-local', async () => {
     region: 'US-CA',
     city: 'Los Angeles',
   });
+});
+
+test('getClientInfo: recognizes the unchanged Tompedia Flutter user agent', async () => {
+  isLocalhost.default.mockResolvedValue(true);
+
+  const info = await getClientInfo(
+    new Request('https://example.test', { headers: { 'user-agent': 'Tompedia/1.0' } }),
+    {},
+  );
+
+  expect(info.browser).toBe('Tompedia');
 });
 
 test('hasBlockedIp: returns false for malformed client ip with cidr block', () => {

@@ -224,6 +224,9 @@ export default withNextIntl({
   },
   basePath,
   output: isVercel ? undefined : 'standalone',
+  outputFileTracingIncludes: {
+    '/*': ['prisma/prod-ca-2021.crt'],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

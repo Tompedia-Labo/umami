@@ -775,15 +775,15 @@ describe('identify collection', () => {
     expect(firstBody.sessionId).not.toBe(secondBody.sessionId);
     expect(createSessionMock.mock.calls[0][0]).toMatchObject({
       id: firstBody.sessionId,
-      distinctId: 'user-1',
+      distinctId: uuid('user-1'),
     });
     expect(createSessionMock.mock.calls[1][0]).toMatchObject({
       id: secondBody.sessionId,
-      distinctId: 'user-2',
+      distinctId: uuid('user-2'),
     });
   });
 
-  test('normalizes distinct IDs before calculating the session ID', async () => {
+  test('hashes long distinct IDs without merging common prefixes', async () => {
     const prefix = 'a'.repeat(50);
     const first = await callPOST({
       type: 'identify',
@@ -797,9 +797,13 @@ describe('identify collection', () => {
     const firstBody = (await first.json()) as Record<string, any>;
     const secondBody = (await second.json()) as Record<string, any>;
 
-    expect(firstBody.sessionId).toBe(secondBody.sessionId);
-    expect(createSessionMock.mock.calls[0][0]).toMatchObject({ distinctId: prefix });
-    expect(createSessionMock.mock.calls[1][0]).toMatchObject({ distinctId: prefix });
+    expect(firstBody.sessionId).not.toBe(secondBody.sessionId);
+    expect(createSessionMock.mock.calls[0][0]).toMatchObject({
+      distinctId: uuid(`${prefix}-first`),
+    });
+    expect(createSessionMock.mock.calls[1][0]).toMatchObject({
+      distinctId: uuid(`${prefix}-second`),
+    });
   });
 
   test('saves a session link and updates the session for a new distinctId', async () => {
@@ -812,7 +816,7 @@ describe('identify collection', () => {
     expect(updateSessionMock).toHaveBeenCalledTimes(1);
     expect(saveSessionLinkMock.mock.calls[0][0]).toMatchObject({
       websiteId: WEBSITE_ID,
-      distinctId: 'user-42',
+      distinctId: uuid('user-42'),
     });
   });
 
